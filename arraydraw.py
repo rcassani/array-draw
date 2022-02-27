@@ -305,9 +305,34 @@ class ArrayDraw:
     
     
 if __name__== "__main__":
-    # Dimensions (rows, cols, pages) 
-    array_draw = ArrayDraw([4, 3, 2], cube_size=30)
+    # Examples 
     filename = './cube_testo.svg'
+    # 2D array as plane
+    array_draw = ArrayDraw([4, 3, 0])
     array_draw.save_svg(filename)
     webbrowser.open(filename)
-        
+    # 2D array as cuboid
+    array_draw = ArrayDraw([4, 3, 1])
+    array_draw.save_svg(filename)
+    webbrowser.open(filename)
+    # 3D array as cuboid
+    array_draw = ArrayDraw([4, 3, 2])
+    array_draw.save_svg(filename)
+    webbrowser.open(filename)
+    # 3D array, custom color hue, custom line color
+    array_draw = ArrayDraw([4, 3, 2], cube_color='#304e6c', line_color='#6f6f6f')
+    array_draw.save_svg(filename)
+    webbrowser.open(filename)
+    # 3D array, custom face, roof and side colors
+    array_draw = ArrayDraw([4, 3, 2], cube_color=['#ff0000', '#00ff00', '#0000ff'])
+    array_draw.save_svg(filename)
+    webbrowser.open(filename)        
+    # 3D array, custom colors for each tile in face, roof and side
+    face_colors = np.array([['#ff0000', '#ffffff', '#ffff00'], ['#0000ff', '#0000ff', '#ff8c00'], ['#00ff00', '#ff0000', '#ffff00']])
+    roof_colors = np.array([['#ffffff', '#ff0000', '#ff8c00'], ['#ff8c00', '#ffff00', '#ffffff'], ['#0000ff', '#00ff00', '#ffffff']])
+    side_colors = np.array([['#00ff00', '#0000ff', '#ff0000'], ['#ffff00', '#ff0000', '#ff0000'], ['#ff0000', '#ffff00', '#ff8c00']])
+    array_draw = ArrayDraw([3, 3, 3], cube_color=[face_colors, roof_colors, side_colors])
+    array_draw.save_svg(filename)
+    webbrowser.open(filename)   
+    
+    
