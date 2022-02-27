@@ -306,30 +306,44 @@ class ArrayDraw:
     
 if __name__== "__main__":
     # Examples 
-    filename = './cube_testo.svg'
+    filename_base = './example_'
+    filename_ext  = '.svg'
+    i_example = 1
     # 2D array as plane
+    filename = filename_base + str(i_example) + filename_ext
+    i_example = i_example + 1
     array_draw = ArrayDraw([4, 3, 0])
     array_draw.save_svg(filename)
     webbrowser.open(filename)
     # 2D array as cuboid
+    filename = filename_base + str(i_example) + filename_ext
+    i_example = i_example + 1
     array_draw = ArrayDraw([4, 3, 1])
     array_draw.save_svg(filename)
     webbrowser.open(filename)
     # 3D array as cuboid
+    filename = filename_base + str(i_example) + filename_ext
+    i_example = i_example + 1
     array_draw = ArrayDraw([4, 3, 2])
     array_draw.save_svg(filename)
     webbrowser.open(filename)
     # 3D array, custom color hue, custom line color
+    filename = filename_base + str(i_example) + filename_ext
+    i_example = i_example + 1
     array_draw = ArrayDraw([4, 3, 2], cube_color='#304e6c', line_color='#6f6f6f')
     array_draw.save_svg(filename)
     webbrowser.open(filename)
     # 3D array, custom face, roof and side colors
+    filename = filename_base + str(i_example) + filename_ext
+    i_example = i_example + 1
     array_draw = ArrayDraw([4, 3, 2], cube_color=['#ff0000', '#00ff00', '#0000ff'])
     array_draw.save_svg(filename)
     webbrowser.open(filename)        
     # 3D array, custom colors for each tile in face, roof and side
+    filename = filename_base + str(i_example) + filename_ext
+    i_example = i_example + 1
     face_colors = np.array([['#ff0000', '#ffffff', '#ffff00'], ['#0000ff', '#0000ff', '#ff8c00'], ['#00ff00', '#ff0000', '#ffff00']])
-    roof_colors = np.array([['#ffffff', '#ff0000', '#ff8c00'], ['#ff8c00', '#ffff00', '#ffffff'], ['#0000ff', '#00ff00', '#ffffff']])
+    roof_colors = np.array([['#ffffff', '#ff8c00', '#0000ff'], ['#ff0000', '#ffff00', '#00ff00'], ['#ff8c00', '#ffffff', '#ffffff']])
     side_colors = np.array([['#00ff00', '#0000ff', '#ff0000'], ['#ffff00', '#ff0000', '#ff0000'], ['#ff0000', '#ffff00', '#ff8c00']])
     array_draw = ArrayDraw([3, 3, 3], cube_color=[face_colors, roof_colors, side_colors])
     array_draw.save_svg(filename)

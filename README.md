@@ -18,4 +18,4 @@ Python class to generate visualizations for 1D, 2D and 3D arrays
 <img src="https://user-images.githubusercontent.com/8238803/155902109-592d6bb7-6ef6-4eb4-bb97-00eeb9d9252f.svg" width="200">
 
 6. 3D array, custom colors for each tile in face, roof and side
-<img src="https://user-images.githubusercontent.com/8238803/155902110-2142b688-c446-4cb6-8320-0b8b61faa049.svg" width="200">
+<img src="https://user-images.githubusercontent.com/8238803/156004440-b017b37e-a429-4f34-91a2-61befdf5fdc5.svg" width="200">
