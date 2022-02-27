@@ -80,21 +80,23 @@ class ArrayDraw:
         self.shape = shape
 #TODO Validate legends
         # Empty list or 3 list (with potential empty elements)
-        self.legends = legends
-#TODO Validate color
-     
-#TODO Add color shade (mixing with white and black)
-#TODO Reshape color         
-        self.cube_color = cube_color
-        self.line_color = line_color
+        self.legends = legends      
+        
+        # Size of elements
         self.cube_size = cube_size
         if line_size is None:
             line_size = self.cube_size // 10
         self.line_size = line_size       
+        
+        # Projection parameters 
         self.theta = np.radians(theta)
         self.x_proj = projection * np.cos(self.theta)
         self.y_proj = projection * np.sin(self.theta)
-    
+
+        # Colors
+        self.cube_color = self.validate_color(cube_color)
+        self.line_color = line_color
+           
     def get_draw_size(self):       
         width  = ((self.shape[1] * self.cube_size) +
                   (self.shape[2] * self.cube_size * self.x_proj)) 
@@ -110,8 +112,6 @@ class ArrayDraw:
             f.write(svg_element + '\n')
         f.close()
         
-#TODO Validate filename     
-        #svgstr = self.make_svg()    
         return 
     
     def make_svg(self):              
@@ -124,9 +124,6 @@ class ArrayDraw:
         viewbox_str = 'viewBox="0 0 ' + str(width) + str(height) + '"'
         self.svg_list = []
         self.svg_list.append('<svg xmlns="http://www.w3.org/2000/svg" width="100%" ' + viewbox_str + '>')
-        
-        # Fill, just to have an idea, this is tmp
-        self.svg_list.append('<rect width="100%" height="100%" fill="green"/>')
         
         # Draw cube
         self.svg_list = self.svg_list + self.svg_array()
@@ -141,14 +138,14 @@ class ArrayDraw:
     def svg_array(self, x_offset=0, y_offset=0):
         svg_list = []
         # ========== Make face tiles ==========
-        # face_color = self.color_fill[0]
-        face_color = 'red'
         face_x_origin = self.cube_size + x_offset
         face_y_origin = self.cube_size + (self.shape[2] * self.y_proj * self.cube_size) + y_offset
         for i_height in range(self.shape[0]):
             for i_width in range(self.shape[1]):
-                if (i_width == 0) and (i_height == 0):
-                    print('Hi')
+                if type(self.cube_color[0]) is np.ndarray:
+                    face_color = self.cube_color[0][i_height, i_width]    
+                else:
+                    face_color = self.cube_color[0] 
                 svg_list.append(self.svg_face_tile(face_x_origin + (i_width  * self.cube_size), 
                                                    face_y_origin + (i_height * self.cube_size), 
                                                    self.cube_size,
@@ -156,12 +153,14 @@ class ArrayDraw:
                                                    self.line_color,
                                                    self.line_size))
         # ========== Make roof tiles ==========
-        # roof_color = self.color_fill[1]
-        roof_color = 'red'
         roof_x_origin = self.cube_size + x_offset
         roof_y_origin = self.cube_size + (self.shape[2] * self.y_proj * self.cube_size) + y_offset
         for i_width in range(self.shape[1]):
             for i_depth in range(self.shape[2]):
+                if type(self.cube_color[1]) is np.ndarray:
+                    roof_color = self.cube_color[1][i_width, i_depth]    
+                else:
+                    roof_color = self.cube_color[1] 
                 svg_list.append(self.svg_roof_tile(roof_x_origin + (i_width  * self.cube_size) + (i_depth * self.cube_size * self.x_proj), 
                                                    roof_y_origin - (i_depth * self.cube_size * self.y_proj), 
                                                    self.cube_size,
@@ -170,13 +169,15 @@ class ArrayDraw:
                                                    roof_color,                                                  
                                                    self.line_color,
                                                    self.line_size))                
-        # ========== Make side tiles ==========
-        # side_color = self.color_fill[2]
-        side_color = 'red'
+        # ========== Make side tiles ==========        
         side_x_origin = self.cube_size + (self.cube_size * (self.shape[1] - 1)) + x_offset
         side_y_origin = self.cube_size + (self.shape[2] * self.y_proj * self.cube_size) + y_offset
         for i_height in range(self.shape[0]):
             for i_depth in range(self.shape[2]):
+                if type(self.cube_color[2]) is np.ndarray:
+                    side_color = self.cube_color[2][i_height, i_depth]    
+                else:
+                    side_color = self.cube_color[2]   
                 svg_list.append(self.svg_side_tile(side_x_origin + (i_depth * self.cube_size * self.x_proj), 
                                                    side_y_origin + (i_height * self.cube_size) - (i_depth * self.cube_size * self.y_proj),
                                                    self.cube_size,
@@ -244,15 +245,55 @@ class ArrayDraw:
         # SVG to PNG
         return
   
-    def validate_color(self):
-        # Either one str with the name of the color, shades are computed
-        # If plane 
-        #     A 1D array or List with 3 elements RGB
-        # If cube
-        #     A 1D array (3) or List with RBG elements, shades computed 
-        #     A 2D array (3x3) with the colors for the planes
-        #    An List with 3 3D arrays, each 3D array has the colors for each element in a plane  
-        return
+    def validate_color(self, color_input):
+        cube_color = []
+        # Color is just one #RRGGBB string
+        if type(color_input) is str:
+            # Face color
+            cube_color.append(color_input)  # face color
+            # Roof color
+            cube_color.append(self.rgba_to_hexstr(self.interpolate_color(self.hexstr_to_rgb(color_input),
+                                                                         self.hexstr_to_rgb('#FFFFFF'),
+                                                                         0.5)))
+            cube_color.append(self.rgba_to_hexstr(self.interpolate_color(self.hexstr_to_rgb(color_input),
+                                                                         self.hexstr_to_rgb('#000000'),
+                                                                         0.5)))
+        # Color is list with 3 elements, either:
+        #    3 #RRGGBB string, or
+        #    3 np.ndarrays of the sizes [HxW], [WxD], [HxD] (Face, Roof, Side)
+        if len(color_input) == 3:
+            cube_color = color_input       
+        return cube_color              
+        
+    def hexstr_to_rgb(self, hexstr):
+        # #FFFFFF   -> [255, 255, 255] 
+        rgba = np.zeros(3)
+        if len(hexstr) != 7:
+            print('Color must be specified as #RRGGBB')
+            return
+        hexstr = hexstr[1:]
+        for ix in range(len(rgba)):
+            rgba[ix] = int('0x' + hexstr[2*ix : 2*(ix+1)], 16)
+        return rgba
+    
+    def rgba_to_hexstr(self, rgba):
+        # [255, 255, 255]      -> #FFFFFF
+        hexstr = ''
+        if len(rgba) != 3:
+            print('Color must be specified as #RRGGBB')
+            return
+        for ix in range(len(rgba)):
+            hexstr = hexstr +  "{:02x}".format(int(rgba[ix])).upper()
+        hexstr = '#' + hexstr
+        return hexstr
+    
+    def interpolate_color(self, rgb1, rgb2, step):
+        # Linear interpolation between 2 colors, from color1 to color 2
+        # step = 0 -> color1
+        # step = 1 -> color2
+        rgb = (rgb2 - rgb1) * step + rgb1       
+        return rgb
+    
     
 if __name__== "__main__":
     # Dimensions (rows, cols, pages) 
