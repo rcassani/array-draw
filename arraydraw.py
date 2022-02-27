@@ -17,24 +17,61 @@ import webbrowser
 
 class ArrayDraw:
     """
-    This class represents the cabinet projection for a 3D array
+    This class generate 2D or 3D visualizations for arrays:
+                    ________
+    1D array:     /__/__/__/|    OR    __ __ __ 
+                 |__|__|__|/          |__|__|__|
+
+                  [1, 3, 1]           [1, 3, 0]                          
+                 __ 
+               /__/|             __ 
+              |__|/|            |__|  
+              |__|/|      OR    |__|
+              |__|/|            |__|
+              |__|/             |__| 
+
+            [4, 1, 1]         [4, 1, 0]                          
+
+                  ________      _________        /|
+    2D array:    |__|__|__|    /__/__/__/      /|/|  
+                 |__|__|__|   /__/__/__/      |/|/| 
+                 |__|__|__|                   |/|/|
+                 |__|__|__|                   |/|/
+                                              |/
+
+                 [4, 3, 0]    [0, 3, 2]     [4, 0, 2]                          
+                                              
+                    _________
+    3D array:      /__/__/__/|
+                 /__/__/__/|/|
+                |__|__|__|/|/| 
+                |__|__|__|/|/| 
+                |__|__|__|/|/
+                |__|__|__|/                                                                            
+            
+                 [4, 3, 2]
+
     """
     
-    def __init__(self, shape, legends=None, cube_size=10, line_size=None, theta=45, projection=0.5, cube_color='red', line_color='black'):
+    def __init__(self, shape, legends=None, cube_size=30, line_size=None, cube_color='#FF0000', line_color='#000000', theta=45, projection=0.5):
         """
         Constructor method. 
         
         Arguments:
-            shape:     Height, Width, Depth
-            legends:   text
-            color:     text
-            cube_size:  text
-            line_size:
-            cube_color:
-            line_color: 
-            theta : Angle in degrees (Default = 45)
-            projection: Length of the backwards segment (in relationship to square side)
-                         
+            shape:        Height, Width, Depth
+            legends:      text
+            cube_size:    Size of the face square
+            line_size:    Width for the line (Default = cube_size // 10)
+            cube_color:   Colors are given as #RRGGBB
+                          1 color: For front
+                              A brighter version is computed for the top (roof)
+                              A darker version is computed for the side
+                          3 colors: For front, top and side
+                          Three 2D arrays with the color for each square tile in
+                          Face, Roof, Side  [[HxW], [WxD], [HxD]]                        
+            line_color:   1 color 
+            theta :       Angle for depth axis in degrees [0 - 90] (Default = 45) 
+            projection:   Scale for the depth units (Default = 0.5)                        
         """
 #TODO Validate shape        
         # Must be [x, y, z], always 3 elements, or numpy array
@@ -151,7 +188,7 @@ class ArrayDraw:
         return svg_list
         
     def svg_face_tile(self, x, y, size, fill_color='red', line_color='black', line_size=1):    
-        # Draws the face (F) tile for a cube with its origin at * (upper left front corner)
+        # Draws the face (F) tile for a cube with its origin at '*' (upper left front corner)
         #   .----.
         #  /  R /|
         # *----. |
@@ -162,7 +199,7 @@ class ArrayDraw:
         return svg_str
     
     def svg_roof_tile(self, x, y, size, x_proj, y_proj, fill_color='red', line_color='black', line_size=1):              
-        # Draws the roof (R) tile for a cube with its origin at * (upper left front corner)
+        # Draws the roof (R) tile for a cube with its origin at '*' (upper left front corner)
         #   .----.
         #  /  R /|
         # *----. |
@@ -181,7 +218,7 @@ class ArrayDraw:
         return svg_str
 
     def svg_side_tile(self, x, y, size, x_proj, y_proj, fill_color='red', line_color='black', line_size=1):
-        # Draws the side (S) tile for a cube with its origin at * (upper left front corner)
+        # Draws the side (S) tile for a cube with its origin at '*' (upper left front corner)
         #   .----.
         #  /  R /|
         # *----. |
