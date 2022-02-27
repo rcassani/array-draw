@@ -130,9 +130,9 @@ class ArrayDraw:
         self.cube_height = height + (self.cube_size * 2)
         
         # SVG start tag
-        viewbox_str = 'viewBox="0 0 ' + str(width) + str(height) + '"'
+        viewbox_str = 'viewBox="0 0 ' + str(self.cube_width) + ' ' + str(self.cube_height) + '"'
         self.svg_list = []
-        self.svg_list.append('<svg xmlns="http://www.w3.org/2000/svg" width="100%" ' + viewbox_str + '>')
+        self.svg_list.append('<svg xmlns="http://www.w3.org/2000/svg" ' + viewbox_str + '>')
         
         # Draw cube
         self.svg_list = self.svg_list + self.svg_array()
