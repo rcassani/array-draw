@@ -73,11 +73,20 @@ class ArrayDraw:
             theta :       Angle for depth axis in degrees [0 - 90] (Default = 45) 
             projection:   Scale for the depth units (Default = 0.5)                        
         """
-#TODO Validate shape        
-        # Must be [x, y, z], always 3 elements, or numpy array
-        # There should be at least two dimensions
-        # As such "vector" arrays need to be defined in 2D
+        
+        # Validate shape
+        if len(shape) != 3:
+            print('Shape must be a list of 3 elements')
+            return
+        nz = 0
+        for element in shape:
+            if element <= 0:
+                nz = nz + 1
+        if nz > 1:
+            print('At least two dimensions must be >= 1')
+            return                
         self.shape = shape
+        
 #TODO Validate legends
         # Empty list or 3 list (with potential empty elements)
         self.legends = legends      
