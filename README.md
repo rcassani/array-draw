@@ -1,5 +1,7 @@
 # ArrayDraw
-Python class to generate visualizations for 1D, 2D and 3D arrays
+Python class to generate visualizations for 1D, 2D and 3D arrays.
+
+This project was inspired by the way how DataArrays are visualized in [scipp](https://scipp.github.io/index.html).
 
 ## Examples
 1. 2D array as plane
