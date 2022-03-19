@@ -53,15 +53,18 @@ class ArrayDraw:
 
     """
     
-    def __init__(self, shape, legends=None, cube_size=30, line_size=None, cube_color='#FF0000', line_color='#000000', theta=45, projection=0.5):
+    def __init__(self, shape, cube_size=30, cube_color='#FF0000',
+                              line_size=None, line_color='#000000', 
+                              legends=[None, None, None], legend_size=None, 
+                              title=None, title_size=None, 
+                              background_color = None, text_color='#000000',
+                              theta=45, projection=0.5):       
         """
         Constructor method. 
         
         Arguments:
             shape:        Height, Width, Depth
-            legends:      text
             cube_size:    Size of the face square
-            line_size:    Width for the line (Default = cube_size // 10)
             cube_color:   Colors are given as #RRGGBB
                           1 color: For front
                               A brighter version is computed for the top (roof)
@@ -69,7 +72,15 @@ class ArrayDraw:
                           3 colors: For front, top and side
                           Three 2D arrays with the color for each square tile in
                           Face, Roof, Side  [[HxW], [WxD], [HxD]]                        
-            line_color:   1 color 
+            line_size:    Width for the line (Default = cube_size // 10)
+            line_color:   1 color
+            legends:      3-element list for Height, Width, Depth
+                              Use empty strings '' to add space for labels 
+            legend_size:   
+            title:        String, use empty strings '' to add space for labels 
+            title_size:   
+            back_color:   Background color
+            text_color:   Text color  
             theta :       Angle for depth axis in degrees [0 - 90] (Default = 45) 
             projection:   Scale for the depth units (Default = 0.5)                        
         """
@@ -86,33 +97,58 @@ class ArrayDraw:
             print('At least two dimensions must be >= 1')
             return                
         self.shape = shape
-        
-#TODO Validate legends
-        # Empty list or 3 list (with potential empty elements)
-        self.legends = legends      
-        
+        # Validate legends
+        if legends is None:
+            legends = [None, None, None]
+        self.legends = legends             
+        # Validate title
+        if title is None:
+            title = ''
+        self.title = title
         # Size of elements
         self.cube_size = cube_size
         if line_size is None:
             line_size = self.cube_size // 10
         self.line_size = line_size       
+        if legend_size is None:
+            legend_size = self.cube_size / 4
+        self.legend_size = legend_size
+        if title_size is None:
+            title_size = self.cube_size / 2
+        self.title_size = title_size       
         
-        # Projection parameters 
-        self.theta = np.radians(theta)
-        self.x_proj = projection * np.cos(self.theta)
-        self.y_proj = projection * np.sin(self.theta)
-
         # Colors
         self.cube_color = self.validate_color(cube_color)
         self.line_color = line_color
+        self.background_color = background_color
+        self.text_color = text_color
+        
+        # Projection parameters 
+        self.theta = theta
+        self.projection = projection
+        self.x_proj = self.projection * np.cos(np.radians(self.theta))
+        self.y_proj = self.projection * np.sin(np.radians(self.theta))
            
-    def get_draw_size(self):       
+    def get_array_size(self):       
         width  = ((self.shape[1] * self.cube_size) +
                   (self.shape[2] * self.cube_size * self.x_proj)) 
         height = ((self.shape[0] * self.cube_size) +
                   (self.shape[2] * self.cube_size * self.y_proj))
         return width, height 
-           
+    
+    def get_labels_margins(self):
+        margins = [0, 0, 0, 0] # [URDL]
+        # Height label
+        if self.legends[0] != None:
+            margins[3] = 1.5 * self.legend_size        
+        # Width label
+        if self.legends[1] != None:
+            margins[2] = 1.5 * self.legend_size
+        # Title label
+        if self.title != None:
+            margins[0] = 1.5 * self.title_size
+        return margins 
+       
     def save_svg(self, filename):        
         svg_list = self.make_svg()    
         # Write SVG file to a file
@@ -124,20 +160,33 @@ class ArrayDraw:
         return 
     
     def make_svg(self):              
-        # Minimum size to show the array (with margins)
-        width, height = self.get_draw_size()
-        self.cube_width  = width  + (self.cube_size * 2)
-        self.cube_height = height + (self.cube_size * 2)
+        # Minimum area to show the array
+        width, height = self.get_array_size()
+        # Additional space of labels [Top, Right, Bottom, Left]
+        label_margins = self.get_labels_margins()
+        # Additional margins [Top, Right, Bottom, Left] (One 'cube_side')
+        space_margins = [self.cube_size, self.cube_size, self.cube_size, self.cube_size]        
+        # Add margins
+        self.cube_width  = space_margins[1] + label_margins[1] + width  + space_margins[3] + label_margins[3]       
+        self.cube_height = space_margins[0] + label_margins[0] + height + space_margins[2] + label_margins[2]
+        
+        # Reference point (upper left corner of the area to show the array)
+        x_offset = 0 + label_margins[3] + space_margins[3] 
+        y_offset = 0 + label_margins[0] + space_margins[0] 
         
         # SVG start tag
         viewbox_str = 'viewBox="0 0 ' + str(self.cube_width) + ' ' + str(self.cube_height) + '"'
         self.svg_list = []
         self.svg_list.append('<svg xmlns="http://www.w3.org/2000/svg" ' + viewbox_str + '>')
         
+        # Set background color
+        if self.background_color is not None:               
+            self.svg_list.append('<rect width="100%" height="100%" fill="{0}"/>'.format(self.background_color))
+        
         # Draw cube
-        self.svg_list = self.svg_list + self.svg_array()
+        self.svg_list = self.svg_list + self.svg_array(x_offset, y_offset)
         # Draw labels
-        self.svg_list = self.svg_list + self.svg_labels()
+        self.svg_list = self.svg_list + self.svg_labels(x_offset, y_offset)
         
         # SVG end tag 
         self.svg_list.append('</svg>')
@@ -147,8 +196,8 @@ class ArrayDraw:
     def svg_array(self, x_offset=0, y_offset=0):
         svg_list = []
         # ========== Make face tiles ==========
-        face_x_origin = self.cube_size + x_offset
-        face_y_origin = self.cube_size + (self.shape[2] * self.y_proj * self.cube_size) + y_offset
+        face_x_origin = x_offset
+        face_y_origin = y_offset + (self.shape[2] * self.y_proj * self.cube_size)
         for i_height in range(self.shape[0]):
             for i_width in range(self.shape[1]):
                 if type(self.cube_color[0]) is np.ndarray:
@@ -162,8 +211,8 @@ class ArrayDraw:
                                                    self.line_color,
                                                    self.line_size))
         # ========== Make roof tiles ==========
-        roof_x_origin = self.cube_size + x_offset
-        roof_y_origin = self.cube_size + (self.shape[2] * self.y_proj * self.cube_size) + y_offset
+        roof_x_origin = x_offset
+        roof_y_origin = y_offset + (self.shape[2] * self.y_proj * self.cube_size) 
         for i_width in range(self.shape[1]):
             for i_depth in range(self.shape[2]):
                 if type(self.cube_color[1]) is np.ndarray:
@@ -179,8 +228,8 @@ class ArrayDraw:
                                                    self.line_color,
                                                    self.line_size))                
         # ========== Make side tiles ==========        
-        side_x_origin = self.cube_size + (self.cube_size * (self.shape[1] - 1)) + x_offset
-        side_y_origin = self.cube_size + (self.shape[2] * self.y_proj * self.cube_size) + y_offset
+        side_x_origin = x_offset + (self.cube_size * (self.shape[1] - 1))
+        side_y_origin = y_offset + (self.shape[2] * self.y_proj * self.cube_size)
         for i_height in range(self.shape[0]):
             for i_depth in range(self.shape[2]):
                 if type(self.cube_color[2]) is np.ndarray:
@@ -246,9 +295,42 @@ class ArrayDraw:
         svg_str = '<polygon points="{0}, {1} {2}, {3} {4}, {5} {6}, {7}" fill="{8}" stroke="{9}" stroke-width="{10}" stroke-linejoin="round"/>'.format(x1, y1, x2, y2, x3, y3, x4, y4, fill_color, line_color, line_size)
         return svg_str
 
-    def svg_labels(self):
-        # Make axis labels
-        return []
+    def svg_labels(self, x_offset=0, y_offset=0):
+        # Add (axis) legends and title text if available
+        #      TITLE
+        #      .----.
+        #     /    /|
+        #    *----. |
+        #  H |    | .
+        #    |    |/ D
+        #    .----.        
+        #      W
+        svg_list = []
+        # Template for text in SVG, [x, y] is the center of the text
+        template_string = ('<text x="{0}" y="{1}" transform="rotate({2},{0},{1})" ' +
+                           'font-size="{3}" font-family="Arial, Helvetica, sans-serif" ' +
+                           'dominant-baseline="middle" text-anchor="{4}">{5}</text>')
+        # Height label
+        if self.legends[0] != None:
+            x = x_offset - self.legend_size
+            y = y_offset + (self.shape[2] * self.y_proj * self.cube_size) + (self.shape[0] * self.cube_size) / 2
+            svg_list.append(template_string.format(x, y, -90, self.legend_size, 'middle', self.legends[0]))        
+        # Width label
+        if self.legends[1] != None:
+            x = x_offset + (self.shape[1] * self.cube_size) / 2
+            y = y_offset + (self.cube_size * ((self.shape[2] * self.y_proj) + self.shape[0])) + self.legend_size
+            svg_list.append(template_string.format(x, y, 0, self.legend_size, 'middle', self.legends[1]))                    
+        # Depth label
+        if self.legends[2] != None:
+            x = x_offset + (self.shape[1] * self.cube_size) + ((self.shape[2] * self.x_proj * self.cube_size) / 2) + (self.x_proj / self.projection * self.legend_size) 
+            y = y_offset + ((self.shape[2] * self.y_proj * self.cube_size) / 2) + (self.shape[0] * self.cube_size) + (self.y_proj / self.projection * self.legend_size) 
+            svg_list.append(template_string.format(x, y, -self.theta, self.legend_size, 'middle', self.legends[2]))        
+        # Title label
+        if self.title != None:
+            x = x_offset + self.cube_size * (self.shape[1] + (self.shape[2] * self.x_proj)) / 2 
+            y = y_offset - self.title_size
+            svg_list.append(template_string.format(x, y, 0, self.title_size, 'middle', self.title))        
+        return svg_list
     
     def make_png(self):
         # SVG to PNG
@@ -347,6 +429,13 @@ if __name__== "__main__":
     side_colors = np.array([['#00ff00', '#0000ff', '#ff0000'], ['#ffff00', '#ff0000', '#ff0000'], ['#ff0000', '#ffff00', '#ff8c00']])
     array_draw = ArrayDraw([3, 3, 3], cube_color=[face_colors, roof_colors, side_colors])
     array_draw.save_svg(filename)
-    webbrowser.open(filename)   
-    
-    
+    webbrowser.open(filename)    
+    # 3D array, custom face, roof and side colors, plus labels and title
+    filename = filename_base + str(i_example) + filename_ext
+    i_example = i_example + 1
+    array_draw = ArrayDraw([4, 3, 2], cube_color=['#ff0000', '#00ff00', '#0000ff'],                            
+                           legends=['Frequency', 'Time', 'Channel'],
+                           title='Spectrogram', 
+                           background_color='#ffffff')
+    array_draw.save_svg(filename)
+    webbrowser.open(filename)
